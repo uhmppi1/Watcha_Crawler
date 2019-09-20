@@ -7,7 +7,7 @@
 import os.path
 import re
 import selenium
-import pandas as pd
+# import pandas as pd
 import time
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -54,10 +54,10 @@ class watcha_crawler(webdriver.Chrome):
     def find_matching(self, list_movie, i): # 영화 리스트와 순서를 인풋으로 받으면
         
         count = 0
-        name_movie_pre = list_movie[i]['movieNm'] # 영화 리스트에서 매칭 쿼리를 잡고
+        name_movie_pre = list_movie[i]['movieNm'].strip() # 영화 리스트에서 매칭 쿼리를 잡고
         name_movie = re.sub(' ','%20',name_movie_pre)
-        year_movie = list_movie[i]['prdtYear'] 
-        nation_movie = list_movie[i]['repNationNm'] 
+        year_movie = list_movie[i]['prdtYear'].strip()
+        nation_movie = list_movie[i]['repNationNm'].strip()
         self.get('https://watcha.com/ko-KR/search?query='+name_movie) # 왓챠에서 영화를 검색해 본다.
         now_html = self.page_source
         now_source = BeautifulSoup(now_html, 'lxml')
@@ -65,13 +65,20 @@ class watcha_crawler(webdriver.Chrome):
         len_same = len(title_prev)
         
         print(name_movie_pre + '에 대한 결과')
-        print('정답은 {}, {}, {}'.format(name_movie_pre, year_movie, nation_movie))
+        print('정답은 [{}], [{}], [{}]'.format(name_movie_pre, year_movie, nation_movie))
 
         for j in range(len_same): #제목, 제작년도, 국가를 매칭시켜서 맞는 걸 찾는다.
             try:
-                query_title = title_prev[j].a.find_all('div')[2].find_all('div')[0].text
-                query_movie = title_prev[j].a.find_all('div')[2].find_all('div')[1].text.split()[0]
-                query_nation = title_prev[j].a.find_all('div')[2].find_all('div')[1].text.split()[2]
+                query_title = title_prev[j].a.find_all('div')[2].find_all('div')[0].text.strip()
+                query_movie = title_prev[j].a.find_all('div')[2].find_all('div')[1].text.split()[0].strip()
+                query_nation = title_prev[j].a.find_all('div')[2].find_all('div')[1].text.split()[2].strip()
+
+                # print('[', query_title, ']')
+                # print('[', query_movie, ']')
+                # print('[', query_nation, ']')
+                # print('[', name_movie_pre, ']')
+                # print('[', year_movie, ']')
+                # print('[', nation_movie, ']')
 
                 if(query_title == name_movie_pre and query_movie == year_movie and query_nation == nation_movie): # 세 조건이 맞으면
                     print(name_movie_pre + '매칭 성공\n##########################################\n')
@@ -112,6 +119,7 @@ class watcha_crawler(webdriver.Chrome):
             self.get(movie_url+'/comments')
             for i in range(num_comments//3): #스크롤 내리는 코드. 로그인 해야함. num_comments만큼 댓글 수집. 
                 self.execute_script("window.scrollTo(0, document.body.scrollHeight);") #한 번 스크롤에 3개씩 추가. 검증은 해봐야.
+                time.sleep(0.1)
             now_html = self.page_source
             now_source = BeautifulSoup(now_html, 'lxml')
             comments_list = now_source.find_all('div', {'class':"css-wnwcvo-Comment e1oskw6f0"}) # 댓글 목록 수집
